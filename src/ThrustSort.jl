@@ -2,7 +2,7 @@ module ThrustSort
 
 using CUDA
 
-const lib = joinpath(@__DIR__, "..", "deps", "sort_thrust.so")
+const lib = joinpath(@__DIR__, "..", "deps", "thrust_sort.so")
 
 const jtypes = [ Float32, Float64
                , Int8, Int16, Int32, Int64
@@ -19,6 +19,7 @@ function gen_sort(:: Type{T}) where T
       else
         ccall(($sfname, lib), Nothing, (CuPtr{$T}, UInt), val, length(val))
       end
+      val
     end
   end
 end
@@ -35,6 +36,7 @@ function gen_sort_by_key(:: Type{T}, :: Type{S}) where {T, S}
       else
         ccall(($sfname, lib), Nothing, (CuPtr{$T}, CuPtr{$S}, UInt), key, val, length(val))
       end
+      val
     end
   end
 end
@@ -48,5 +50,10 @@ end
 for T in jtypes, S in jtypes
   eval(gen_sort_by_key(T, S))
 end
+
+thrustsort(val) = thrustsort!(copy(val))
+
+export thrustsort!,
+       thrustsort
 
 end # module ThrustSort
