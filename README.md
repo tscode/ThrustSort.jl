@@ -21,7 +21,7 @@ using CUDA
 using ThrustSort
 
 a = cu(rand(1000))
-thrustsort!(a; sorted = false)
+thrustsort!(a)
 ```
 Depending on the size of the array, thrust's sorting can be orders of magnitude faster than the implementation available via the Base.sort interface.
 Compare the following examples
@@ -38,3 +38,29 @@ Note that **both** arrays are sorted in this case.
 key, val = cu([1, 3, 2]), cu([1, 2, 3])
 thrustsort!(key, val) # switches element 2 and 3 in both a and b
 ```
+
+### Sorting along dimensions
+The primary purpose for this package was to accelerate sorting each column of
+a `10000 x 10000` matrix. The in-built function `sort(a, dims = 1)` took several
+seconds and converting the data to `CuArray` did not bring about performance
+benefits.
+Formally, column-wise sorting is not supported by `thrust::sort`. However, it
+can be achieved via the following trick:
+```julia
+n = 10
+a = cu(rand(n, n))
+indices = cu(repeat(1:n, inner = n)) # indices[i] is the column of the value a[i]
+
+# First, sort the data and apply the same permutation to indices
+thrustsort!(a, indices)
+
+# Now, sort indices without altering the order of elements with the same index 
+thrustsort!(indices, a, stable = true)
+```
+This trick can be applied for arbitrary segmentations of the data. Even though
+it looks inefficient (sorting `n^2` values twice), it improved runtimes from
+more than 10 seconds to less than 1 second for `n = 10_000` (on the M10). In
+fact, if we let `indices` be of type `Int16`, we can bring the runtime down to
+about 0.3 seconds (without measuring the time to allocate `indices`, since it
+can be reused). 
+
