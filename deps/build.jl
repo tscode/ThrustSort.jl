@@ -11,6 +11,8 @@ function codegen_header()
   """
   #include <thrust/device_ptr.h>
   #include <thrust/sort.h>
+  //#include <thrust/random.h>
+  //#include <thrust/shuffle.h>
 
   """
 end
@@ -44,6 +46,21 @@ function codegen_sort_by_key()
         """
       end
     end
+  end
+end
+
+# TODO: check cuda toolkit version and conditionally include shuffle
+# functionality
+function codegen_shuffle()
+  mapreduce(vcat, enumerate(jtypes)) do (i, T)
+    C = ctypes[i]
+    """
+    extern \"C\" void thrust_shuffle_$T($C * value, size_t len, int seed) {
+      thrust::device_ptr<$C> d_value(value);
+      thrust::default_random_engine g(seed);
+      thrust::shuffle(d_value, d_value + len, g);
+    }
+    """
   end
 end
 
