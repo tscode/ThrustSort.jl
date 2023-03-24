@@ -11,7 +11,7 @@ To install the package, run
 using Pkg; Pkg.add(url="git@github.com:tscode/ThrustSort.jl.git")
 ```
 The build process requires that the executable `nvcc` can be found (check via `which nvcc` in a shell before running julia),
-and that the thrust header files are available.
+and that the thrust header files are available. Building might take up to a couple of minutes.
 
 ## Usage
 
@@ -27,7 +27,7 @@ Depending on the size of the array, thrust's sorting can be orders of magnitude 
 Compare the following examples
 ```julia
 a = cu(rand(100_0000_000))
-CUDA.@Time sort(a);
+CUDA.@time sort(a);
 CUDA.@time thrustsort(a);
 ```
 which returns timings of 19 versus 0.15 seconds on a Tesla M10 in the second run.
@@ -63,4 +63,3 @@ more than 10 seconds to less than 1 second for `n = 10_000` (on the M10). In
 fact, if we let `indices` be of type `Int16`, we can bring the runtime down to
 about 0.3 seconds (without measuring the time to allocate `indices`, since it
 can be reused). 
-
